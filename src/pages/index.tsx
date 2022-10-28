@@ -1,10 +1,10 @@
 import * as React from 'react'
 import Layout from '../components/layout'
 import styled from 'styled-components'
-import background from 'images/home-bg.svg'
-import listDot from 'images/list-dot.png'
+import background from '../images/home-bg.svg'
+import listDot from '../images/list-dot.png'
 import { BookOpen, Package, Database, Menu, ArrowRight, ChevronsRight } from 'react-feather'
-import { graphql, useStaticQuery } from 'gatsby'
+import { graphql, useStaticQuery, withPrefix } from 'gatsby'
 
 import { PrimaryButton, SpecialButton } from '../components/button'
 import Schema from '../icons/home/Schema'
@@ -112,30 +112,21 @@ const ListTitle = styled.h3`
   }
 `
 
-const List = styled.ul<{ split?: boolean }>`
+const List = styled.ul`
   list-style: none;
   padding: 0;
-  margin-left: ${(p) => p.theme.space[16]};
+  margin-left: 1rem;
   list-style-image: url(${listDot});
-  ${(p) =>
-    p.split &&
-    ` -moz-column-count: 4;
-  -moz-column-gap: ${(p: any) => p.theme.space[32]};
-  -webkit-column-count: 4;
-  -webkit-column-gap: ${(p: any) => p.theme.space[32]};
-  column-count: 4;
-  column-gap: ${(p: any) => p.theme.space[32]};`}
   li {
-    padding-left: ${(p) => p.theme.space[8]};
-    ${(p) =>
-      p.split ? 'line-height: 24px; margin-top: 0;' : 'line-height: 1rem; margin-top: 10px;'};
-
+    padding-left: 0.5rem;
+    line-height: 1rem;
+    margin-top: 10px;
     a {
-      color: ${(p) => p.theme.colors.gray800} !important;
+      color: #2d3748 !important;
       cursor: pointer;
       text-decoration: none;
       &:hover {
-        color: ${(p) => p.theme.colors.gray600} !important;
+        color: #718096 !important;
       }
     }
   }
@@ -143,8 +134,16 @@ const List = styled.ul<{ split?: boolean }>`
     font-weight: normal;
     line-height: 0;
   }
-  @media (min-width: 0) and (max-width: ${(p) => p.theme.breakpoints.phone}) {
+`
+
+const MoreLinksList = styled(List)`
+  @media only screen and (max-width: 640px) {
     column-count: 1;
+  }
+  column-count: 4;
+  li {
+    line-height: 24px;
+    margin-top: 0;
   }
 `
 
@@ -177,21 +176,19 @@ const QuickLinks = styled.div`
   }
 `
 
-const CapTitle = styled.h4<{ withBorder?: boolean }>`
+const CapTitle = styled.h4`
   text-transform: uppercase !important;
   font-weight: bold;
   letter-spacing: 0.02em;
-  font-size: ${(p) => p.theme.fontSizes[14]};
-  ${(p) =>
-    p.withBorder &&
-    `
-  border-bottom: 1px solid ${(p: any) => p.theme.colors.gray400};
-  width: 100%;
-  max-width: 996px;
-  padding-bottom: ${(p: any) => p.theme.space[16]};`}
+  font-size: 14px;
 `
 
-const GenaralLinks = styled.div`
+const BorderCapTitle = styled(CapTitle)`
+  width: 100%;
+  max-width: 996px;
+`
+
+const GeneralLinks = styled.div`
   background: #ffffff;
   box-shadow: 0px 28px 53px rgba(0, 0, 0, 0.07), 0px 8.44118px 15.9779px rgba(0, 0, 0, 0.0393306),
     0px 3.50603px 6.63642px rgba(0, 0, 0, 0.0238066),
@@ -229,7 +226,7 @@ const Row = styled.div`
   }
 `
 
-const LinkCard = styled.a`
+const LinkCard = styled(Link)`
   background: ${(p) => p.theme.colors.gray200};
   border-radius: ${(p) => p.theme.radii.medium};
   padding: 0 ${(p) => p.theme.space[24]};
@@ -306,7 +303,6 @@ const Homepage = () => {
 
   return (
     <Layout homePage={true}>
-      <SEO title={title} description={description} homepage />
       <Summary>
         <h1>Prisma Documentation</h1>
         <NormalPara>
@@ -319,7 +315,7 @@ const Homepage = () => {
         <SummaryLinks>
           {SummaryLinkData.buttons.map((slink: any, index: number) =>
             slink.special ? (
-              <SpecialButton href={slink.url} key={index} icon={icons[slink.icon]}>
+              <SpecialButton href={withPrefix(slink.url)} key={index} icon={icons[slink.icon]}>
                 &nbsp; {slink.text}
               </SpecialButton>
             ) : (
@@ -336,7 +332,7 @@ const Homepage = () => {
         </SummaryLinks>
       </Summary>
       <QuickLinks>
-        <GenaralLinks>
+        <GeneralLinks>
           {GeneralLinkData.map((generalLink: any, index: number) => (
             <GeneralLink>
               <IconHolder>{icons[generalLink.icon]}</IconHolder>
@@ -356,14 +352,14 @@ const Homepage = () => {
               </div>
             </GeneralLink>
           ))}
-        </GenaralLinks>
+        </GeneralLinks>
         <Space height={80} />
         <SubHeading>Guides</SubHeading>
         <NormalPara>{GuideText}</NormalPara>
         <Row>
           {GuideLinkData.map((gLinkData: any, index: number) => (
             <LinkCard
-              href={gLinkData.url}
+              to={gLinkData.url}
               key={index}
               style={{
                 maxWidth: gLinkData.small ? '274px' : '384px',
@@ -387,7 +383,7 @@ const Homepage = () => {
               <span className="icon">{icons[rLinkData.icon]}</span>
               <Space height={16} />
               <ListTitle>
-                <Link href={rLinkData.mainUrl}>
+                <Link to={rLinkData.mainUrl}>
                   {rLinkData.categoryName} &nbsp;
                   <ArrowRight color="#A0AEC0" />{' '}
                 </Link>
@@ -405,9 +401,9 @@ const Homepage = () => {
           ))}
         </Row>
         <Space height={80} />
-        <CapTitle withBorder={true}>More useful resources</CapTitle>
+        <BorderCapTitle>More useful resources</BorderCapTitle>
         <Row style={{ marginTop: '0' }}>
-          <List split={true}>
+          <MoreLinksList>
             {MoreUsefulLinks.map((uLink: any, index: number) => (
               <li key={index}>
                 <Link to={uLink.url}>
@@ -415,7 +411,7 @@ const Homepage = () => {
                 </Link>
               </li>
             ))}
-          </List>
+          </MoreLinksList>
         </Row>
       </QuickLinks>
     </Layout>
@@ -424,7 +420,7 @@ const Homepage = () => {
 
 export default Homepage
 
-const query = graphql`
+export const query = graphql`
   query Homepage {
     site {
       siteMetadata {
@@ -481,3 +477,11 @@ const query = graphql`
     }
   }
 `
+
+export const Head = () => {
+  const { site } = useStaticQuery(query)
+  const {
+    siteMetadata: { title, description },
+  } = site
+  return <SEO title={title} description={description} homepage />
+}

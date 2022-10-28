@@ -345,8 +345,8 @@ await prisma.email.updateMany({
   where: {
     user: {
       id: 10,
-      unread: true,
     },
+    unread: true,
   },
   data: {
     unread: false,
@@ -690,6 +690,14 @@ If a ❌ conflict occurs (someone else has changed the record since you read it)
 
 This section describes how to build your own optimistic concurrency control. See also: Plans for [application-level optimistic concurrency control on GitHub](https://github.com/prisma/prisma/issues/4988)
 
+<Admonition type="info">
+
+- If you use version 4.4.0 or earlier, you cannot use optimistic concurrency control on `update` operations, because you cannot filter on non-unique fields. The `version` field you need to use with optimistic concurrency control is a non-unique field.
+
+- From version 4.5.0, you can filter on non-unique fields in `update` operations, so you can use optimistic concurrency control with `update` operations. To do so, use the [extendedWhereUnique preview feature](/reference/api-reference/prisma-client-reference#filter-on-non-unique-fields-with-userwhereuniqueinput).
+
+</Admonition>
+
 #### When to use optimistic concurrency control
 
 - ✔ You anticipate a high number of concurrent requests (multiple people booking cinema seats)
@@ -773,7 +781,7 @@ model Seat {
 
 Next, adjust the code to check the `version` field before updating:
 
-```ts highlight=18-37;normal
+```ts highlight=19-38;normal
 const userEmail = 'alice@prisma.io'
 const movieName = 'Hidden Figures'
 
@@ -836,6 +844,8 @@ generator client {
 
 Then you can pass an async function into [$transaction](/guides/performance-and-optimization/prisma-client-transactions-guide#transaction-api).
 
+The first argument passed into this async function is an instance of Prisma Client. Below, we will call this instance `tx`. Any Prisma call invoked on this `tx` instance is encapsulated into the transaction.
+
 In the example below, Alice and Bob each have $100 in their account. If they try to send more money than they have, the transfer is rejected.
 
 The expected outcome would be for Alice to make 1 transfer for $100 and the other transfer would be rejected. This would result in Alice having $0 and Bob having $200.
@@ -845,9 +855,9 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function transfer(from: string, to: string, amount: number) {
-  return await prisma.$transaction(async (prisma) => {
+  return await prisma.$transaction(async (tx) => {
     // 1. Decrement amount from the sender.
-    const sender = await prisma.account.update({
+    const sender = await tx.account.update({
       data: {
         balance: {
           decrement: amount,
@@ -857,12 +867,14 @@ async function transfer(from: string, to: string, amount: number) {
         email: from,
       },
     })
+
     // 2. Verify that the sender's balance didn't go below zero.
     if (sender.balance < 0) {
       throw new Error(`${from} doesn't have enough to send ${amount}`)
     }
+
     // 3. Increment the recipient's balance by amount
-    const recipient = prisma.account.update({
+    const recipient = tx.account.update({
       data: {
         balance: {
           increment: amount,
@@ -872,6 +884,7 @@ async function transfer(from: string, to: string, amount: number) {
         email: to,
       },
     })
+
     return recipient
   })
 }
@@ -884,9 +897,13 @@ async function main() {
 }
 
 main()
-  .catch(console.error)
-  .finally(() => {
-    prisma.$disconnect()
+  .then(async () => {
+    await prisma.$disconnect()
+  })
+  .catch(async (e) => {
+    console.error(e)
+    await prisma.$disconnect()
+    process.exit(1)
   })
 ```
 

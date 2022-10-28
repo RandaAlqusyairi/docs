@@ -10,7 +10,7 @@ import RightChevron from '../icons/RightChevron'
 import useWindowDimensions from '../hooks/useWindowDimensions'
 import { useLocation } from '@reach/router'
 import ExternalLink from '../icons/ExternalLink'
-import { Navbar } from './navbar'
+import { WebsiteHeader } from '@prisma/lens/dist/web'
 
 type HeaderViewProps = {
   headerProps: HeaderProps
@@ -32,7 +32,7 @@ const HeaderWrapper = styled.div`
   img {
     margin-bottom: 0;
   }
-  padding: ${(p) => p.theme.space[24]} ${(p) => p.theme.space[16]};
+  //padding: ${(p) => p.theme.space[24]} ${(p) => p.theme.space[16]};
   display: flex;
   justify-content: center;
 `
@@ -43,7 +43,12 @@ const Container = styled.div`
 
   > * {
     padding: 0;
-
+    a {
+      text-decoration: none;
+    }
+    .container {
+      padding: 0;
+    }
     .menu {
       background: transparent;
       border: 0;
@@ -230,6 +235,51 @@ const SecondLevelNav = styled.div`
   }
 `
 
+interface MenuItemProps {
+  componentToShow?: any
+  type: string
+  text: string
+  link?: string
+  setCheckState?: (arg0: string) => void
+}
+
+const MenuItem = ({ componentToShow, type, text, link }: MenuItemProps) => {
+  const isCurrent = location && link && location.pathname.includes(link)
+  const [showExpanded, setShowExpanded] = React.useState(isCurrent)
+  const toggle = () => setShowExpanded(!showExpanded)
+  return type === 'bucket' ? (
+    <>
+      <SecondLevelMobileNavLink onClick={toggle}>
+        {text}
+        {showExpanded ? <UpChevron /> : <RightChevron />}
+      </SecondLevelMobileNavLink>
+      {showExpanded && componentToShow}
+    </>
+  ) : (
+    <DarkNavLink to={link}>
+      <div className="menu-item">
+        {text}
+        <ExternalLink />
+      </div>
+    </DarkNavLink>
+  )
+}
+
+const SecondLevelMobileMenu = ({ headerProps }: HeaderViewProps) => (
+  <SecondLevelNav>
+    {headerProps.secondLevelHeaderMenuItems.map((item) => {
+      return (
+        <MenuItem
+          componentToShow={<Sidebar isMobile={true} slug={item.bucketName} />}
+          type={item.type}
+          text={item.text}
+          link={item.to}
+        />
+      )
+    })}
+  </SecondLevelNav>
+)
+
 const HeaderSec = ({ headerProps }: HeaderViewProps) => {
   const [showDocsBtn, setShowDocsBtn] = React.useState(true)
   const [showMobileNav, setShowMobileNav] = React.useState(false)
@@ -252,7 +302,10 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
       <SecondLevelNav>
         <div>
           {bucketItems.map((item) => {
-            const isCurrent = location && item.to && location.pathname.includes(item.to)
+            const bucketStringPosition = process.env.NODE_ENV === 'production' ? 2 : 1
+            const bucketPath = `/${location.pathname.split('/')[bucketStringPosition]}`
+            const isCurrent = location && item.to && bucketPath !== '' && item.to === bucketPath
+
             return (
               <DarkNavLink
                 to={item.to}
@@ -277,63 +330,19 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
     )
   }
 
-  interface MenuItemProps {
-    componentToShow?: any
-    type: string
-    text: string
-    link?: string
-  }
-
-  const MenuItem = ({ componentToShow, type, text, link }: MenuItemProps) => {
-    const isCurrent = location && link && location.pathname.includes(link)
-    const [showExpanded, setShowExpanded] = React.useState(isCurrent)
-    const toggle = () => setShowExpanded(!showExpanded)
-    return type === 'bucket' ? (
-      <>
-        <SecondLevelMobileNavLink onClick={toggle}>
-          {text}
-          {showExpanded ? <UpChevron /> : <RightChevron />}
-        </SecondLevelMobileNavLink>
-        {showExpanded && componentToShow}
-      </>
-    ) : (
-      <DarkNavLink to={link}>
-        <div className="menu-item">
-          {text}
-          <ExternalLink />
-        </div>
-      </DarkNavLink>
-    )
-  }
-
-  const SecondLevelMobileMenu = () => (
-    <SecondLevelNav>
-      {headerProps.secondLevelHeaderMenuItems.map((item) => {
-        return (
-          <MenuItem
-            componentToShow={<Sidebar isMobile={true} slug={item.bucketName} />}
-            type={item.type}
-            text={item.text}
-            link={item.to}
-          />
-        )
-      })}
-    </SecondLevelNav>
-  )
-
   return (
     <>
       {/* Top level header */}
       <HeaderWrapper>
         <Container>
-          <Navbar />
+          <WebsiteHeader lightTheme={false} clearBg={true} notFixed={true} />
         </Container>
       </HeaderWrapper>
 
       {/* Second level header */}
       <SecondLevelHeader>
         <Container style={{ display: 'flex' }}>
-          <SearchComponent hitsStatus={changeHitsStatus} />
+          <SearchComponent hitsStatus={changeHitsStatus} location={location} />
           {showDocsBtn && (
             <NonMobileMenu style={{ width: '100%' }}>
               <SecondLevelMenu />
@@ -350,7 +359,7 @@ const HeaderSec = ({ headerProps }: HeaderViewProps) => {
 
       {showMobileNav && (
         <SecondLevelMobileOnlyNav>
-          <SecondLevelMobileMenu />
+          <SecondLevelMobileMenu headerProps={headerProps} />
         </SecondLevelMobileOnlyNav>
       )}
     </>

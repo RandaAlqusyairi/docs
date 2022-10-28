@@ -5,7 +5,8 @@ import ArrowDown from '../../icons/ArrowDown'
 import Link from '../link'
 import { urlGenerator } from '../../utils/urlGenerator'
 import { useLocation } from '@reach/router'
-import { withPrefix } from 'gatsby'
+import { graphql, useStaticQuery, withPrefix } from 'gatsby'
+import config from '../../../config'
 
 const List = styled.ul`
   list-style: none;
@@ -41,8 +42,9 @@ const ListItem = styled.li`
       background: ${(p) => p.theme.colors.gray200};
       border-radius: ${(p) => p.theme.radii.small};
       padding: 2px 5px;
+      text-transform: capitalize;
       &.small {
-        font-size: 13px;
+        font-size: 12px;
       }
     }
 
@@ -156,7 +158,11 @@ const TreeNode = ({
   codeStyle,
   parents,
 }: any) => {
-  const isCollapsed = collapsed[label]
+  const SpecialPaths = config.siteMetadata.SpecialPaths
+
+  let isCollapsed = collapsed[label]
+  const hasChildren = items.length !== 0
+
   const collapse = () => {
     Object.keys(collapsed).map((lbl) => {
       if ((lbl !== label && !parents) || (lbl !== label && parents && !parents.includes(lbl))) {
@@ -173,7 +179,6 @@ const TreeNode = ({
   }
 
   const location = useLocation()
-  const hasChildren = items.length !== 0
   const level = slug ? slug.split('/').indexOf(label) : ''
 
   const calculatedClassName = `${className || ''} ${topLevel ? 'top-level' : ''} ${
@@ -211,8 +216,25 @@ const TreeNode = ({
     }
   }, [isCollapsed])
 
+  React.useEffect(() => {
+    console.log(SpecialPaths)
+    if (lastLevel && isCurrent && hasExpandButton && collapsed[label]) setCollapsed(label, true)
+  }, [])
+
+  const specialCases =
+    slug &&
+    (SpecialPaths.find((e: string) =>
+      urlGenerator(slug)
+        .replace(/\/index$/, '')
+        .endsWith(e)
+    )
+      ? '/'
+      : '')
+
   const isCurrent =
-    location && slug && location.pathname.includes(urlGenerator(slug).replace('/index', ''))
+    location &&
+    slug &&
+    location.pathname.includes(urlGenerator(slug).replace(/\/index$/, '') + specialCases)
 
   return url === '/' ? null : (
     <ListItem className={calculatedClassName}>

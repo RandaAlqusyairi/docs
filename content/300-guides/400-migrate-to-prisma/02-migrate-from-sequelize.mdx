@@ -8,7 +8,7 @@ metaDescription: 'Learn how to migrate from Sequelize to Prisma'
 
 This guide describes how to migrate from Sequelize to Prisma. It uses an extended version of the [Sequelize Express example](https://github.com/sequelize/express-example) as a [sample project](https://github.com/prisma/migrate-from-sequelize-to-prisma) to demonstrate the migration steps. You can find the example used for this guide on [GitHub](https://github.com/prisma/migrate-from-sequelize-to-prisma).
 
-This migration guide uses PostgreSQL as as an example database, but it equally applies to any other relational database that's [supported by Prisma](/reference/database-reference/supported-databases).
+This migration guide uses PostgreSQL as the example database, but it equally applies to any other relational database that's [supported by Prisma](/reference/database-reference/supported-databases).
 
 You can learn how Prisma compares to Sequelize on the [Prisma vs Sequelize](/concepts/more/comparisons/prisma-and-sequelize) page.
 
@@ -403,7 +403,7 @@ model Profiles {
   bio       String
   createdAt DateTime
   updatedAt DateTime
-  userId    Int?
+  userId    Int?     @unique
   Users     Users?   @relation(fields: [userId], references: [id])
 }
 
@@ -467,7 +467,7 @@ model Profiles {
   bio       String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  userId    Int?
+  userId    Int?     @unique
   Users     Users?   @relation(fields: [userId], references: [id])
 }
 
@@ -556,7 +556,7 @@ model Profile {
   bio       String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  userId    Int?
+  userId    Int?     @unique
   user      User?    @relation(fields: [userId], references: [id])
 
   @@map("Profiles")
@@ -1201,7 +1201,7 @@ model Posts {
 
 In this Prisma schema, the many-to-many relation is modeled explicitly via the relation table `PostCategories`
 
-By adhering to the [conventions for Prisma relation tables](), the relation could look as follows:
+By adhering to the conventions for Prisma relation tables, the relation could look as follows:
 
 ```prisma
 model Categories {
